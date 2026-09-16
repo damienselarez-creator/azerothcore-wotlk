@@ -1059,6 +1059,8 @@ void World::SetInitialWorldSettings()
 
     if (sConfigMgr->isDryRun())
     {
+        // Outdoor PvP cleanup accesses its maps, so it must run before they are unloaded.
+        sOutdoorPvPMgr->Die();
         sMapMgr->UnloadAll();
 
         if (uint32 failed = DBUpdaterUtil::GetFailedUpdateCount())
