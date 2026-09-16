@@ -41,6 +41,10 @@
 #include <sstream>
 #endif
 
+#ifdef MOD_PLAYERBOTS
+#include "Implementation/PlayerbotsDatabase.h"
+#endif
+
 class PingOperation : public SQLOperation
 {
     //! Operation for idle delaythreads
@@ -336,6 +340,17 @@ void DatabaseWorkerPool<T>::DirectCommitTransaction(SQLTransaction<T>& transacti
 }
 
 template <class T>
+uint64 DatabaseWorkerPool<T>::DirectCommitTransactionWithInsertId(SQLTransaction<T>& transaction)
+{
+    auto unlock = [](T* connection) { connection->Unlock(); };
+    std::unique_ptr<T, decltype(unlock)> connection(GetFreeConnection(), unlock);
+    uint64 generatedId = 0;
+    if (connection->ExecuteTransaction(transaction, &generatedId) != 0)
+        return 0;
+    return generatedId;
+}
+
+template <class T>
 PreparedStatement<T>* DatabaseWorkerPool<T>::GetPreparedStatement(PreparedStatementIndex index)
 {
     return new PreparedStatement<T>(index, _preparedStatementSize[index]);
@@ -576,3 +591,7 @@ void DatabaseWorkerPool<T>::ExecuteOrAppend(SQLTransaction<T>& trans, PreparedSt
 template class AC_DATABASE_API DatabaseWorkerPool<LoginDatabaseConnection>;
 template class AC_DATABASE_API DatabaseWorkerPool<WorldDatabaseConnection>;
 template class AC_DATABASE_API DatabaseWorkerPool<CharacterDatabaseConnection>;
+
+#ifdef MOD_PLAYERBOTS
+template class AC_DATABASE_API DatabaseWorkerPool<PlayerbotsDatabaseConnection>;
+#endif

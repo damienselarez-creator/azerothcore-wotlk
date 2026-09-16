@@ -78,7 +78,8 @@ public:
     void BeginTransaction();
     void RollbackTransaction();
     void CommitTransaction();
-    int ExecuteTransaction(std::shared_ptr<TransactionBase> transaction);
+    int ExecuteTransaction(std::shared_ptr<TransactionBase> transaction, uint64* firstInsertId = nullptr);
+    uint64 GetLastInsertId();
     std::size_t EscapeString(char* to, char const* from, std::size_t length);
     void Ping();
 
@@ -108,6 +109,7 @@ protected:
     MySQLHandle* m_Mysql; //! MySQL Handle.
 
 private:
+    bool m_transactionActive = false;
     ProducerConsumerQueue<SQLOperation*>* m_queue;      //! Queue shared with other asynchronous connections.
     std::unique_ptr<DatabaseWorker> m_worker;           //! Core worker task.
     MySQLConnectionInfo& m_connectionInfo;              //! Connection info (used for logging)

@@ -181,6 +181,10 @@ public:
     //! were appended to the transaction will be respected during execution.
     void DirectCommitTransaction(SQLTransaction<T>& transaction);
 
+    //! Commits on one reserved connection; returns the first statement's generated
+    //! AUTO_INCREMENT id only after confirmation. Zero means unconfirmed; no retry.
+    uint64 DirectCommitTransactionWithInsertId(SQLTransaction<T>& transaction);
+
     //! Method used to execute ad-hoc statements in a diverse context.
     //! Will be wrapped in a transaction if valid object is present, otherwise executed standalone.
     void ExecuteOrAppend(SQLTransaction<T>& trans, std::string_view sql);

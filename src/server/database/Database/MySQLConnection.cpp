@@ -379,14 +379,27 @@ void MySQLConnection::CommitTransaction()
     Execute("COMMIT");
 }
 
-int MySQLConnection::ExecuteTransaction(std::shared_ptr<TransactionBase> transaction)
+int MySQLConnection::ExecuteTransaction(std::shared_ptr<TransactionBase> transaction, uint64* firstInsertId)
 {
+    if (firstInsertId)
+        *firstInsertId = 0;
+
     std::vector<SQLElementData> const& queries = transaction->m_queries;
     if (queries.empty())
         return -1;
 
-    BeginTransaction();
+    if (!Execute("START TRANSACTION"))
+        return GetLastError() ? GetLastError() : -1;
 
+    struct TransactionScope
+    {
+        bool& active;
+        explicit TransactionScope(bool& flag) : active(flag) { active = true; }
+        ~TransactionScope() { active = false; }
+    } transactionScope(m_transactionActive);
+
+    uint64 generatedId = 0;
+    bool firstStatement = true;
     for (auto const& data : queries)
     {
         switch (data.type)
@@ -442,6 +455,16 @@ int MySQLConnection::ExecuteTransaction(std::shared_ptr<TransactionBase> transac
             }
             break;
         }
+        if (firstStatement && firstInsertId)
+        {
+            generatedId = GetLastInsertId();
+            if (!generatedId)
+            {
+                RollbackTransaction();
+                return -1;
+            }
+        }
+        firstStatement = false;
     }
 
     // we might encounter errors during certain queries, and depending on the kind of error
@@ -449,8 +472,20 @@ int MySQLConnection::ExecuteTransaction(std::shared_ptr<TransactionBase> transac
     // This is done in calling functions DatabaseWorkerPool<T>::DirectCommitTransaction and TransactionTask::Execute,
     // and not while iterating over every element.
 
-    CommitTransaction();
+    if (!Execute("COMMIT"))
+    {
+        int const errorCode = GetLastError();
+        RollbackTransaction();
+        return errorCode ? errorCode : -1;
+    }
+    if (firstInsertId)
+        *firstInsertId = generatedId;
     return 0;
+}
+
+uint64 MySQLConnection::GetLastInsertId()
+{
+    return mysql_insert_id(m_Mysql);
 }
 
 std::size_t MySQLConnection::EscapeString(char* to, char const* from, std::size_t length)
@@ -554,6 +589,13 @@ PreparedResultSet* MySQLConnection::Query(PreparedStatementBase* stmt)
 
 bool MySQLConnection::_HandleMySQLErrno(uint32 errNo, char const* err, uint8 attempts /*= 5*/)
 {
+    // A new session has lost the active transaction. Replaying only the failed
+    // statement there could autocommit a partial transaction. Let the caller
+    // observe failure; an ordinary subsequent operation can reconnect.
+    if (m_transactionActive && (errNo == CR_SERVER_GONE_ERROR || errNo == CR_SERVER_LOST ||
+        errNo == CR_SERVER_LOST_EXTENDED || errNo == CR_CONN_HOST_ERROR))
+        return false;
+
     std::string str = "";
     switch (errNo)
     {
