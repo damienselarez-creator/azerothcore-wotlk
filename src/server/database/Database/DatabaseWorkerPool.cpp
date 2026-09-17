@@ -406,32 +406,34 @@ void DatabaseWorkerPool<T>::KeepAlive()
 */
 bool DatabaseIncompatibleVersion(std::string const mysqlVersion)
 {
-    // anon func to turn a version string into an array of uint8
-    // "1.2.3" => [1, 2, 3]
-    auto parse = [](std::string const& input)
+    // Parse numeric components, including multi-digit major versions.
+    auto parse = [](std::string const& input, std::vector<uint32>& result)
     {
-        std::vector<uint8> result;
         std::istringstream parser(input);
-        result.push_back(parser.get());
-        for (int i = 1; i < 3; i++)
+        for (int i = 0; i < 3; ++i)
         {
-            // Skip period
-            parser.get();
-            // Append int from parser to output
-            result.push_back(parser.get());
+            if (parser.peek() < '0' || parser.peek() > '9')
+                return false;
+
+            uint32 component = 0;
+            if (!(parser >> component))
+                return false;
+
+            result.push_back(component);
+            if (i < 2 && parser.get() != '.')
+                return false;
         }
-        return result;
+        return true;
     };
 
-    // default to values for MySQL
-    uint8 offset = 0;
-    std::string minVersion = MIN_MYSQL_SERVER_VERSION;
+    std::vector<uint32> serverVersion;
+    std::vector<uint32> minimumVersion;
+    if (!parse(mysqlVersion, serverVersion) ||
+        !parse(MIN_MYSQL_SERVER_VERSION, minimumVersion))
+        return true;
 
-    auto parsedMySQLVersion = parse(mysqlVersion.substr(offset));
-    auto parsedMinVersion = parse(minVersion);
-
-    return std::lexicographical_compare(parsedMySQLVersion.begin(), parsedMySQLVersion.end(),
-                                        parsedMinVersion.begin(), parsedMinVersion.end());
+    return std::lexicographical_compare(serverVersion.begin(), serverVersion.end(),
+        minimumVersion.begin(), minimumVersion.end());
 }
 
 template <class T>
