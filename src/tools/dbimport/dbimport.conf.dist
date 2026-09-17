@@ -80,7 +80,7 @@ TempDir = ""
 #    LoginDatabaseInfo
 #    WorldDatabaseInfo
 #    CharacterDatabaseInfo
-#        Description: Database connection settings for the world server.
+#        Description: Database connection settings for the database importer.
 #        Example:     "hostname;port;username;password;database"
 #                     ".;somenumber;username;password;database" - (Use named pipes on Windows
 #                                                                 "enable-named-pipe" to [mysqld]
@@ -98,6 +98,17 @@ TempDir = ""
 LoginDatabaseInfo     = "127.0.0.1;3306;acore;acore;acore_auth"
 WorldDatabaseInfo     = "127.0.0.1;3306;acore;acore;acore_world"
 CharacterDatabaseInfo = "127.0.0.1;3306;acore;acore;acore_characters"
+
+#
+#    PlayerbotsDatabaseInfo
+#        Description: Connection to the dedicated Playerbots database.
+#        Important:   Used only when compiled with MOD_PLAYERBOTS. Set the credentials here;
+#                     dbimport does not load the module's playerbots.conf configuration file.
+#                     Importing this database does not generate or log in bots.
+#        Default:     "127.0.0.1;3306;acore;acore;acore_playerbots"
+#
+
+PlayerbotsDatabaseInfo = "127.0.0.1;3306;acore;acore;acore_playerbots"
 
 #
 #    Database.Reconnect.Seconds
@@ -140,6 +151,17 @@ CharacterDatabase.WorkerThreads = 1
 LoginDatabase.SynchThreads     = 1
 WorldDatabase.SynchThreads     = 1
 CharacterDatabase.SynchThreads = 1
+
+#
+#    PlayerbotsDatabase.WorkerThreads
+#    PlayerbotsDatabase.SynchThreads
+#        Description: Asynchronous and synchronous connections to the Playerbots database.
+#                     Used only when compiled with MOD_PLAYERBOTS.
+#        Default:     1 - (Each setting)
+#
+
+PlayerbotsDatabase.WorkerThreads = 1
+PlayerbotsDatabase.SynchThreads = 1
 ###################################################################################################
 
 ###################################################################################################
@@ -152,12 +174,16 @@ CharacterDatabase.SynchThreads = 1
 #           DATABASE_LOGIN     = 1, // Auth database
 #           DATABASE_CHARACTER = 2, // Character database
 #           DATABASE_WORLD     = 4, // World database
+#           DATABASE_PLAYERBOTS = 8, // Playerbots database (MOD_PLAYERBOTS builds only)
 #
-#        Default:     7  - (All enabled)
+#        Default:     15 - (All compiled databases enabled; includes Playerbots when available)
+#                     7  - (Auth, character and world updates only)
 #                     4  - (Enable world only)
 #                     0  - (All disabled)
+#        Important:   This mask controls population and updates, not database connections.
+#                     A MOD_PLAYERBOTS build still needs PlayerbotsDatabaseInfo with mask 7.
 
-Updates.EnableDatabases = 7
+Updates.EnableDatabases = 15
 
 #
 #   Updates.AllowedModules
@@ -215,6 +241,14 @@ Updates.AllowRehash = 1
 #                    -1 - (Enabled - unlimited)
 
 Updates.CleanDeadRefMaxCount = 3
+
+#
+#    Updates.ExceptionShutdownDelay
+#        Description: Delay in milliseconds before stopping after a failed SQL import.
+#        Default:     10000
+#
+
+Updates.ExceptionShutdownDelay = 10000
 ###################################################################################################
 
 ###################################################################################################

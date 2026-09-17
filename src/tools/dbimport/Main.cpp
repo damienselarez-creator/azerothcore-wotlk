@@ -123,6 +123,9 @@ bool StartDB()
         .AddDatabase(LoginDatabase, "Login")
         .AddDatabase(CharacterDatabase, "Character")
         .AddDatabase(WorldDatabase, "World");
+#ifdef MOD_PLAYERBOTS
+    loader.AddDatabase(PlayerbotsDatabase, "Playerbots");
+#endif
 
     if (!loader.Load())
         return false;
@@ -134,6 +137,9 @@ bool StartDB()
 /// Close the connection to the database
 void StopDB()
 {
+#ifdef MOD_PLAYERBOTS
+    PlayerbotsDatabase.Close();
+#endif
     CharacterDatabase.Close();
     WorldDatabase.Close();
     LoginDatabase.Close();
