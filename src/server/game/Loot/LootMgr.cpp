@@ -107,6 +107,7 @@ public:
 
     void Verify(LootStore const& lootstore, uint32 id, uint8 group_id) const;
     void CollectLootIds(LootIdSet& set) const;
+    bool HasNonQuestItem(uint32 itemId, uint16 lootMode, uint8 depth) const;
     void CheckLootRefs(LootStore const& lootstore, uint32 Id, LootIdSet* ref_set) const;
     LootStoreItemList* GetExplicitlyChancedItemList() { return &ExplicitlyChanced; }
     LootStoreItemList* GetEqualChancedItemList() { return &EqualChanced; }
@@ -1660,6 +1661,53 @@ bool LootTemplate::CopyConditions(LootItem* li, uint32 conditionLootId) const
         }
     }
 
+    return false;
+}
+
+// Read-only material source discovery. Bound recursive references, including malformed cycles.
+namespace
+{
+    bool MatchesNonQuestSource(LootStoreItem const* item, uint32 itemId, uint16 lootMode,
+                               uint8 depth, bool equalChance)
+    {
+        if (!item || item->needs_quest || !(item->lootmode & lootMode) || !item->maxcount ||
+            (!equalChance && item->chance <= 0.0f))
+            return false;
+        if (item->reference)
+        {
+            if (depth >= 16)
+                return false;
+            LootTemplate const* reference = LootTemplates_Reference.GetLootFor(std::abs(item->reference));
+            return reference && reference->HasNonQuestItem(itemId, lootMode, item->groupid, depth + 1);
+        }
+        return item->itemid == itemId;
+    }
+}
+
+bool LootTemplate::LootGroup::HasNonQuestItem(uint32 itemId, uint16 lootMode, uint8 depth) const
+{
+    for (auto const* item : ExplicitlyChanced)
+        if (MatchesNonQuestSource(item, itemId, lootMode, depth, false))
+            return true;
+    for (auto const* item : EqualChanced)
+        if (MatchesNonQuestSource(item, itemId, lootMode, depth, true))
+            return true;
+    return false;
+}
+
+bool LootTemplate::HasNonQuestItem(uint32 itemId, uint16 lootMode, uint8 groupId, uint8 depth) const
+{
+    if (!itemId || depth > 16)
+        return false;
+    if (groupId)
+        return groupId <= Groups.size() && Groups[groupId - 1] &&
+               Groups[groupId - 1]->HasNonQuestItem(itemId, lootMode, depth);
+    for (auto const* item : Entries)
+        if (MatchesNonQuestSource(item, itemId, lootMode, depth, false))
+            return true;
+    for (auto const* group : Groups)
+        if (group && group->HasNonQuestItem(itemId, lootMode, depth))
+            return true;
     return false;
 }
 
