@@ -2,3 +2,8 @@
 	path = modules/mod-playerbots
 	url = https://github.com/damienselarez-creator/mod-playerbots.git
 	branch = master
+
+[submodule "modules/mod-pbc"]
+	path = modules/mod-pbc
+	url = https://github.com/damienselarez-creator/mod-pbc.git
+	branch = main
