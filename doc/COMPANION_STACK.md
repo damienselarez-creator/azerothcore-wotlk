@@ -74,3 +74,4 @@ Database and PBC journal/adventure backups must be kept as a coherent set.
 Debian/Linux is the reference build and production platform for this fork.
 Windows remains a compatibility target where practical, but Linux behavior and
 reproducible server deployment take precedence.
+CI validation for the complete pinned stack is defined in `.github/workflows/companion-linux-build.yml`.
