@@ -398,10 +398,23 @@ UpdateResult UpdateFetcher::Update(bool const redundancyChecks,
             ApplyUpdateFile(availableQuery);
     }
 
-    // Apply only pending/custom/module updates
+    // Module schemas must exist before their migrations are evaluated.
+    auto const isModuleBase = [](LocaleFileEntry const& entry)
+    {
+        return entry.second == MODULE && entry.first.parent_path().filename() == "base";
+    };
+
     for (auto const& availableQuery : available)
     {
-        if (availableQuery.second == PENDING || availableQuery.second == CUSTOM || availableQuery.second == MODULE)
+        if (isModuleBase(availableQuery))
+            ApplyUpdateFile(availableQuery);
+    }
+
+    // Apply the remaining pending/custom/module updates.
+    for (auto const& availableQuery : available)
+    {
+        if ((availableQuery.second == PENDING || availableQuery.second == CUSTOM ||
+             availableQuery.second == MODULE) && !isModuleBase(availableQuery))
             ApplyUpdateFile(availableQuery);
     }
 

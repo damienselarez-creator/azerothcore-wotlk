@@ -1,0 +1,69 @@
+name: Companion Linux build
+
+on:
+  push:
+    branches:
+      - master
+      - playerbots-modern
+      - modernize-linux-companion-corealign-20260928
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: companion-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ubuntu-24.04-${{ matrix.compiler }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+
+    steps:
+      - name: Checkout companion stack
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git cmake make gcc g++ clang \
+            libmysqlclient-dev libssl-dev libbz2-dev \
+            libreadline-dev libncurses-dev libboost-all-dev
+
+      - name: Select compiler
+        id: compiler
+        shell: bash
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "cc=clang" >> "$GITHUB_OUTPUT"
+            echo "cxx=clang++" >> "$GITHUB_OUTPUT"
+          else
+            echo "cc=gcc" >> "$GITHUB_OUTPUT"
+            echo "cxx=g++" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER="${{ steps.compiler.outputs.cc }}" \
+            -DCMAKE_CXX_COMPILER="${{ steps.compiler.outputs.cxx }}" \
+            -DMODULES=static \
+            -DSCRIPTS=static
+
+      - name: Build complete server stack
+        run: cmake --build build --parallel 2
+
+      - name: Verify pinned modules
+        shell: bash
+        run: |
+          git submodule status
+          test -f modules/mod-playerbots/src/PlayerbotAIConfig.cpp
+          test -f modules/mod-pbc/src/core/pbc_main.cpp
