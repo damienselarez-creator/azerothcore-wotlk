@@ -1,0 +1,6 @@
+[submodule "modules/mod-playerbots"]
+	path = modules/mod-playerbots
+	url = https://github.com/damienselarez-creator/mod-playerbots.git
+[submodule "modules/mod-pbc"]
+	path = modules/mod-pbc
+	url = https://github.com/damienselarez-creator/mod-pbc.git

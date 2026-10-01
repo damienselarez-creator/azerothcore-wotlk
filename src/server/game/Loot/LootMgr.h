@@ -268,6 +268,10 @@ public:
     bool addConditionItem(Condition* cond);
     [[nodiscard]] bool isReference(uint32 id) const;
 
+    // Read-only source discovery used by companion profession planning.
+    [[nodiscard]] bool HasNonQuestItem(uint32 itemId, uint16 lootMode = 1,
+                                      uint8 groupId = 0, uint8 depth = 0) const;
+
 private:
     LootStoreItemList Entries;                          // not grouped only
     LootGroups        Groups;                           // groups have own (optimised) processing, grouped entries go there
