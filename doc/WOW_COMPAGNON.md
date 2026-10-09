@@ -1,54 +1,22 @@
-# WoW Compagnon — direction technique, 9 octobre 2026
+# WoW Compagnon
 
-L'ensemble vise un humain et jusqu'à quatre compagnons de son compte, invoqués
-manuellement, sans population automatique. Les compagnons associent comportement
-de jeu, progression, dialogue, culture et mémoire durable de l'aventure.
+Le fork utilise un seul module optionnel, `modules/mod-wow-compagnon`, qui réunit
+Playerbots et PBC avec leurs historiques. Le cœur demeure compilable sans module.
 
-## Politique de maintenance
+Le même module est compilé avec le cœur officiel AzerothCore 7b2cecef92b271a468e39d89831b520b20ae06a8
+sans modification et avec ce fork. Les deux cœurs sont aussi construits sans le
+module. Aucune API privée du cœur n'est requise.
 
-- Suivre uniquement le dépôt officiel AzerothCore pour les évolutions du cœur.
-- Maintenir Playerbots et PBC dans les forks de damienselarez-creator. Ne plus
-  récupérer les dépôts natifs de ces deux modules, ni leurs branches de staging.
-- Conserver les historiques d'origine et l'attribution des auteurs.
-- Épingler les modules par révision dans le cœur ; compiler l'ensemble exact.
-- Exclure de Git les paramètres privés, clés, comptes, fiches individuelles,
-  dialogues, souvenirs, journaux et fichiers de choix persistants.
-- Conserver les traductions françaises, les choix de vocation et les souvenirs
-  lors de chaque mise à jour. Sauvegarder avant migrations et activation.
+Les configurations AiPlayerbot.*, Playerbots.* et PBC.*, les tables et les formats
+de souvenirs restent compatibles. Les fichiers privés d'exploitation sont placés
+dans env/dist/data/wow-compagnon ; ils ne sont pas versionnés.
 
-## Organisation actuelle
+Installer uniquement le nouveau module. Les anciens mod-playerbots et mod-pbc
+ne doivent pas participer à la même construction. Leurs dépôts GitHub restent
+des archives de provenance ; aucun suivi de leurs dépôts natifs n'est effectué.
 
-Playerbots possède les actions de jeu : déplacement, combat, équipement,
-progression et visite des maîtres. PBC possède les dialogues, les vocations,
-les archétypes et la mémoire. La passerelle transmet des instantanés factuels,
-avec durée de validité, sans conserver de pointeurs de joueurs.
+Maintenance : intégrer les évolutions officielles AzerothCore, adapter le module
+fusionné, valider sur cœur officiel et fork. La compilation et les tests autonomes
+ne remplacent pas l'essai en jeu des dialogues, achats et combats.
 
-L'assemblage peut déjà porter le nom WoW Compagnon. Cela ne transforme pas
-automatiquement deux modules en un module unique : les dépendances et chemins
-de persistance actuels restent réels.
-
-## Fusion physique possible
-
-Recommandation : publier d'abord une distribution cohérente et reproductible,
-puis migrer vers `mod-wow-compagnon` dans une intervention distincte.
-
-Le module unique pourrait contenir `gameplay`, `dialogue`, `memory`, `vocations`,
-`culture` et une interface commune. Il devrait conserver l'apprentissage,
-les rotations et les garde-fous hérités de Playerbots, et isoler l'appel au
-modèle afin qu'une panne de dialogue n'empêche pas les actions de jeu.
-
-La migration devra préserver les historiques Git des deux modules, remplacer
-les fournisseurs et enregistrements de scripts sans double chargement, adapter
-CMake et les inclusions, et accepter les anciens noms de configuration et
-chemins de données. Les anciens choix et souvenirs devront rester lisibles.
-Un seul mécanisme doit être propriétaire d'une action ou d'une synthèse.
-
-Avant activation : compilation complète, suites autonomes, migration à blanc
-des formats sur copies et essai utilisateur à un, deux et quatre compagnons.
-Les améliorations artisanat/guilde restent différées selon les décisions du projet.
-
-## Limites
-
-Cette note propose l'architecture de fusion ; elle ne déclare aucune fusion
-physique réalisée. La compilation et les tests autonomes ne certifient pas les
-achats, les rotations et la coopération en jeu.
+Source du module : https://github.com/damienselarez-creator/mod-wow-compagnon
